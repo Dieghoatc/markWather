@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Document</title>
+
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            display: flex;
+        }
+        #canvas-container {
+            border: 1px solid #ccc;
+            display: inline-block;
+        }
+        #controls {
+            margin-top: 10px;
+        }
+    </style>
+  </head>
+  <body>
+    <div id="controls">
+      <input type="file" id="upload-image" accept="image/*" />
+      <input type="text" id="author" placeholder="Agregar Autor" />
+      <button id="add-author">Agregar Autor</button>
+      <button id="download-image">Descargar</button>
+    </div>
+    <div id="canvas-container">
+      <canvas id="canvas"></canvas>
+    </div>
+
+    <script>
+      const canvas = document.getElementById("canvas");
+      const ctx = canvas.getContext("2d");
+
+      let backgroundImage = null;
+      let logo = null;
+      let author = null;
+
+      document
+        .getElementById("upload-image")
+        .addEventListener("change", (e) => {
+          const reader = new FileReader();
+          reader.onload = (event) => {
+            const img = new Image();
+            img.onload = () => {
+              const maxwidth = 1280;
+              const aspectRatio = img.width / img.height;
+              const newHeight = maxwidth / aspectRatio;
+
+              canvas.width = maxwidth;
+              canvas.height = newHeight;
+
+              ctx.drawImage(img, 0, 0, canvas.with, canvas.height);
+              backgroundImage = {
+                img,
+                offsetX: 0,
+                offsetY: 0,
+                scaledWidth: canvas.width,
+                scaledHeight: canvas.height,
+              };
+              drawCanvas();
+            };
+            img.src = event.target.result;
+          };
+          reader.readAsDataURL(e.target.files[0]);
+        });
+
+      const img = new Image();
+      img.onload = () => {
+        logo = {
+          img,
+          offsetX: 0,
+          scaledWidth: img.width,
+          scaledHeight: img.height,
+        };
+      };
+      img.src = "./logo.png";
+
+      function drawCanvas() {
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        if (backgroundImage) {
+          ctx.drawImage(
+            backgroundImage.img,
+            backgroundImage.offsetX,
+            backgroundImage.offsetY,
+            backgroundImage.scaledWidth,
+            backgroundImage.scaledHeight
+          );
+
+          if (logo) {
+            ctx.globalAlpha = 1;
+            ctx.drawImage(
+              logo.img,
+              logo.offsetX,
+              canvas.height - logo.scaledHeight,
+              logo.scaledWidth,
+              logo.scaledHeight
+            );
+          }
+          if (author) {
+            const gradient = ctx.createLinearGradient(
+                canvas.width - 200,
+                canvas.height - 25,
+                canvas.width,
+                canvas.height - 150
+            )
+
+            gradient.addColorStop(1, 'rgba(255, 255, 255, 0.7)'); 
+            gradient.addColorStop(0, 'rgba(255, 255, 255, 0)');
+
+            ctx.fillStyle = gradient;
+            ctx.fillRect(canvas.width - 450, canvas.height - 25, 450, 100);
+
+            ctx.fillStyle = "black";
+            ctx.font = "12px Arial";
+            ctx.fillText(author.text, canvas.width - 120, canvas.height - 8, 400);
+          }
+        }
+      }
+
+      document.getElementById("add-author").addEventListener("click", () => {
+        const inputText = document.getElementById("author").value;
+        author = { text: inputText || "Alberto Tejedor" };
+        drawCanvas();
+      });
+
+      document
+        .getElementById("download-image")
+        .addEventListener("click", function () {
+          const dataURL = canvas.toDataURL("image/png"); // Export as JPEG with quality 0.8
+          const link = document.createElement("a");
+          link.href = dataURL;
+          link.download = "edited-image.png";
+          link.click();
+        });
+    </script>
+  </body>
+</html>
